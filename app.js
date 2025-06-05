@@ -5,6 +5,7 @@ import session from 'express-session';
 dotenv.config();
 
 const storeOptions = {
+
     
 };
 const store = new session.MemoryStore(); // Use MemoryStore for session storage
@@ -25,7 +26,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'default_secret',
     resave: false,
     saveUninitialized: true,
-    cookie: { sameSite: 'strict', maxAge: 1000 * 60 * 60 * 24,  }
+    cookie: { sameSite: 'strict', maxAge: 1000 * 60 * 60 * 24, secure: process.env.NODE_ENV === 'production'},
 }));
 
 // Routes
