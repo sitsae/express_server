@@ -30,9 +30,7 @@ app.use(session({
 // Routes
 app.get('/', (req, res) => {
     const sessionStore = req.sessionStore;
-    if (!req.session.valueSet) {
-        req.session.valueSet = true;
-    }
+
     sessionStore.all((err, sessions) => {
         if (err) {
             console.error('Error retrieving sessions:', err);
@@ -40,8 +38,8 @@ app.get('/', (req, res) => {
         }
         console.log('Active sessions:', sessions, 'sessionObject:', req.session);
     });
-    res.send('GET request to /. valueSet: set to ', String(req.session.valueSet));
-    console.log('GET request to /. valueSet: set to ', req.session.valueSet);
+    res.send('GET request to /');
+    console.log('GET request to /');
 });
 
 app.get('/users', (req, res)=> {
@@ -70,6 +68,9 @@ app.post('/login', async (req, res) => {
     if (!username || !password) {
         return res.status(400).send('Username and password are required')
     }
+    if (req.session.authenticated) {
+        return res.status(200).send('Already logged in');
+    }
     const user = users.find(user => user.username === username);
     if (!user) {
         return res.status(401).send('User not found')
@@ -80,8 +81,9 @@ app.post('/login', async (req, res) => {
             return res.status(401).send('Invalid password');
         }
         req.session.user = { username: user.username, role: user.role };
+        req.session.authenticated = true;
         res.send('Login successful');
-        console.log('User logged in:', req.session.user);
+        console.log('User logged in:', req.session);
     } catch (error) {
         console.error('Error during login:', error);
         res.status(500).send('Internal Server Error');
