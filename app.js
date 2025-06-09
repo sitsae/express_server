@@ -2,12 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import session from 'express-session';
+import bcrypt from 'bcrypt';
 dotenv.config();
 
-const storeOptions = {
-
-    
-};
+const users = [{ username: 'user1', password: 'password1', role:'user' }]; // format: { username: 'user1', password: 'password1', role: 'admin' | 'user' }
 const store = new session.MemoryStore(); // Use MemoryStore for session storage
 
 const app = express();
@@ -42,9 +40,55 @@ app.get('/', (req, res) => {
         }
         console.log('Active sessions:', sessions, 'sessionObject:', req.session);
     });
-    res.send('GET request to /. valueSet: set to ', session.valueSet);
-    console.log('GET request to /. valueSet: set to ', session.valueSet);
+    res.send('GET request to /. valueSet: set to ', String(req.session.valueSet));
+    console.log('GET request to /. valueSet: set to ', req.session.valueSet);
 });
+
+app.get('/users', (req, res)=> {
+    res.json(users);
+
+})
+app.post('/users', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).send('Username and password are required');
+    }
+    const user = { username: username, password: password, role: 'user' };
+    try {
+        user.password = await bcrypt.hash(user.password, 10);
+    }
+    catch(error) {
+        console.error('Error creating user:', error);
+        return res.status(500).send('Internal Server Error');
+    }
+    users.push(user);
+    res.status(201).send('User created successfully');
+});
+
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).send('Username and password are required')
+    }
+    const user = users.find(user => user.username === username);
+    if (!user) {
+        return res.status(401).send('User not found')
+    }
+    try {
+        const match = await bcrypt.compare(password, user.password);
+        if (!match) {
+            return res.status(401).send('Invalid password');
+        }
+        req.session.user = { username: user.username, role: user.role };
+        res.send('Login successful');
+        console.log('User logged in:', req.session.user);
+    } catch (error) {
+        console.error('Error during login:', error);
+        res.status(500).send('Internal Server Error');
+    }
+
+
+})
 
 // Start server
 app.listen(PORT, () => {
