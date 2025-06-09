@@ -69,7 +69,9 @@ app.post('/login', async (req, res) => {
         return res.status(400).send('Username and password are required')
     }
     if (req.session.authenticated) {
-        return res.status(200).send('Already logged in');
+        res.status(200).send('Already logged in');
+        // return res.redirect('/') // Send to home page if already logged in
+        return;
     }
     const user = users.find(user => user.username === username);
     if (!user) {
