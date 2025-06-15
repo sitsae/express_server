@@ -8,8 +8,22 @@ dotenv.config();
 const users = [{ username: 'user1', password: 'password1', role:'user' }]; // format: { username: 'user1', password: 'password1', role: 'admin' | 'user' }
 const store = new session.MemoryStore(); // Use MemoryStore for session storage
 
+const items = [{ id: 1, name: 'Item 1', description: 'Description of Item 1', price: 100, inStock: 10,}, ]; // Example items
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const findItemById = (id) => {
+    const item = items.find(item => item.id === id);
+    const outOfStock = item && item.inStock <= 0;
+    if (!item) {
+        return null;
+    }   
+    if (outOfStock) {
+        return 'outOfStock';
+    }
+    return item;
+}
 
 // Middleware
 app.use(express.json());
@@ -46,12 +60,18 @@ app.get('/users', (req, res)=> {
     res.json(users);
 
 })
+
 app.post('/users', async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, role } = req.body;
     if (!username || !password) {
         return res.status(400).send('Username and password are required');
     }
-    const user = { username: username, password: password, role: 'user' };
+    if (role && role !== 'admin') {
+        console.error('Invalid role:', role);
+        return res.status(400).send('Role must be admin or undefined');
+    }
+    const user = { username: username, password: password, role: role ? role : 'user' };
+
     try {
         user.password = await bcrypt.hash(user.password, 10);
     }
@@ -61,6 +81,7 @@ app.post('/users', async (req, res) => {
     }
     users.push(user);
     res.status(201).send('User created successfully');
+    console.log('User created:', user);
 });
 
 app.post('/login', async (req, res) => {
@@ -94,14 +115,21 @@ app.post('/login', async (req, res) => {
 
 })
 
-
-app.post('/additem', (req, res) => {
+app.post('/addmyitem', (req, res) => {
     try {if (!req.session.user && !req.session.authenticated) {
         return res.status(401).send('user must be logged in to add item');
     }
-    const item =req.body.item;
-    if (!item) {
+    const itemId =req.body.itemId;
+    const item = findItemById(itemId);
+
+    if (!itemId) {
         return res.status(400).send('Item is required');
+    }
+    if (item === "outOfStock") {
+        return res.status(400).send('Item id out of stock');
+    }
+    if (!item) {
+        return res.status(404).send('Item not found');
     }
     req.session.items = req.session.items || [];
     req.session.items.push(item);
@@ -112,6 +140,64 @@ app.post('/additem', (req, res) => {
             res.status(500).send('Internal Server Error');
         }
 })
+
+app.get('/myitems', (req, res)=> {
+    try {
+        if (!req.session.user || !req.session.authenticated) {
+            return res.status(401).send('User must be logged in to view items');
+        }
+        const userItems = req.session.items || [];
+        res.send(userItems);
+        console.log('User items retrieved:', userItems);
+    } catch (error) {
+        console.error('Error retrieving user items:', error);
+        res.status(500).send('Internal Server Error');
+    }
+})
+
+app.get('/items', (req, res) => {
+try {
+    res.send(items)
+    console.log('Items retrieved:', items);
+
+}
+catch (err) {
+    console.error('Error retrieving items:', err);
+    res.status(500).send('Internal Server Error');}
+})
+
+app.post('/items', (req, res) => {
+    try {
+        const {  name, description, price, inStock } = req.body;
+        if (!name || !description || !price || inStock === undefined) {
+            return res.status(400).send('All item fields are required');
+        }
+        if (typeof price !== 'number' || typeof inStock !== 'number') {
+            return res.status(400).send('Price and inStock must be numbers');
+        }
+        if (price < 0 || inStock < 0) {
+            return res.status(400).send('Price and inStock must be non-negative');
+        }
+        if (!req.session.user || !req.session.authenticated || req.session.user.role !== 'admin') {
+            return res.status(403).send('Only admins can create items');
+        }
+        const newItemId = items.length > 0 ? Math.max(...items.map(item => item.id)) + 1 : 1;
+        const newItem = {
+            id: newItemId,
+            name,
+            description,
+            price,
+            inStock
+        };
+        items.push(newItem);
+        res.status(201).send('Item created successfully', newItem);
+        console.log('Item created:', newItem);
+
+    } catch (err) {
+        console.error('Error creating item:', err);
+        return res.status(500).send('Internal Server Error');
+    }
+});
 
 // Start server
 app.listen(PORT, () => {

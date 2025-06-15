@@ -9,6 +9,33 @@ Content-Type: application/json
   "username": "sigurd",
   "password": "passord"
 }
+###
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "username": "admsigurd",
+  "password": "passord",
+  "role": "admin"
+}
+###
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "username": "admsigurd",
+  "password": "passord",
+  "role": "admin"
+}
+###
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "username": "admsigurd",
+  "password": "passord",
+  "role": "adminn"
+}
 
 ###
 POST http://localhost:3000/login
@@ -24,17 +51,32 @@ POST http://localhost:3000/login
 Content-Type: application/json
 
 {
-  "username": "sigurd",
+  "username": "admsigurd",
   "password": "passord"
 }
 
 ###
-POST http://localhost:3000/additem
+POST http://localhost:3000/addmyitem
 Content-Type: application/json
 
 {
-    "item": {
-        "name": "item1",
-        "price": 100
-    }
+    "itemId": 1
 }
+
+###
+POST http://localhost:3000/items
+Content-Type: application/json
+
+{
+"name": "Item 3",
+"description": "Description of Item 1", 
+"price": 100,
+"inStock": 10
+}
+
+
+###
+GET http://localhost:3000/items
+
+###
+GET http://localhost:3000/myitems
