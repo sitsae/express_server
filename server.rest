@@ -27,3 +27,14 @@ Content-Type: application/json
   "username": "sigurd",
   "password": "passord"
 }
+
+###
+POST http://localhost:3000/additem
+Content-Type: application/json
+
+{
+    "item": {
+        "name": "item1",
+        "price": 100
+    }
+}

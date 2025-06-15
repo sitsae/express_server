@@ -94,6 +94,25 @@ app.post('/login', async (req, res) => {
 
 })
 
+
+app.post('/additem', (req, res) => {
+    try {if (!req.session.user && !req.session.authenticated) {
+        return res.status(401).send('user must be logged in to add item');
+    }
+    const item =req.body.item;
+    if (!item) {
+        return res.status(400).send('Item is required');
+    }
+    req.session.items = req.session.items || [];
+    req.session.items.push(item);
+    res.status(201).send('Item added successfully');
+    console.log('Item added:', item, 'Session items:', req.session.items);}
+    catch (error) {
+            console.error('Error adding item:', error);
+            res.status(500).send('Internal Server Error');
+        }
+})
+
 // Start server
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
