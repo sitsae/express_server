@@ -8,7 +8,7 @@ dotenv.config();
 const users = [{ username: 'user1', password: 'password1', role:'user' }]; // format: { username: 'user1', password: 'password1', role: 'admin' | 'user' }
 const store = new session.MemoryStore(); // Use MemoryStore for session storage
 
-const items = [{ id: 1, name: 'Item 1', description: 'Description of Item 1', price: 100, inStock: 10,}, ]; // Example items
+const items = [{ id: 1, name: 'Item 1', description: 'Description of Item 1', price: 100, inStock: 10,}, { id: 2, name: 'Item 2', description: 'Description of Item 2', price: 200, inStock: 5 }, { id: 3, name: 'Item 3', description: 'Description of Item 3', price: 300, inStock: 0 }, { id: 4, name: 'Item 4', description: 'Description of Item 4', price: 400, inStock: 2 }, { id: 5, name: 'Item 5', description: 'Description of Item 5', price: 500, inStock: 8 }, { id: 6, name: 'Item 6', description: 'Description of Item 6', price: 600, inStock: 1 }, { id: 7, name: 'Item 7', description: 'Description of Item 7', price: 700, inStock: 3 }, { id: 8, name: 'Item 8', description: 'Description of Item 8', price: 800, inStock: 4 }, { id: 9, name: 'Item 9', description: 'Description of Item 9', price: 900, inStock: 6 }, { id: 10, name: 'Item 10', description: 'Description of Item 10', price: 1000, inStock: 9 }]
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +30,7 @@ app.use(express.json());
 app.use(cors(
     {
         origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+        credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE'], 
       }
 ));
@@ -84,6 +85,14 @@ app.post('/users', async (req, res) => {
     console.log('User created:', user);
 });
 
+app.get('/session', (req, res)=> {
+    if (!req.session.authenticated) {
+        return false;
+    }
+    console.log('Session retrieved:', req.session.authenticated);
+    return res.status(200).send(req.session.authenticated);
+});
+
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -105,6 +114,7 @@ app.post('/login', async (req, res) => {
         }
         req.session.user = { username: user.username, role: user.role };
         req.session.authenticated = true;
+
         res.send('Login successful');
         console.log('User logged in:', req.session);
     } catch (error) {
@@ -116,6 +126,7 @@ app.post('/login', async (req, res) => {
 })
 
 app.post('/addmyitem', (req, res) => {
+    console.log(req.session);
     try {if (!req.session.user && !req.session.authenticated) {
         return res.status(401).send('user must be logged in to add item');
     }
@@ -158,7 +169,7 @@ app.get('/myitems', (req, res)=> {
 app.get('/items', (req, res) => {
 try {
     res.send(items)
-    console.log('Items retrieved:', items);
+    console.log('Items retrieved');
 
 }
 catch (err) {
