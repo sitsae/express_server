@@ -1,0 +1,1 @@
+export const users = [{ username: 'user1', password: 'password1', role:'user' }];
