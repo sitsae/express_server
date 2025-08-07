@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import session from "express-session";
 import bcrypt from "bcrypt";
 import { items } from "./items.js";
+import { categories } from "./categories.js";
 import { users } from "./users.js";
 dotenv.config();
 
@@ -321,6 +322,42 @@ app.get(
     }
   }
 );
+
+app.get("/categories", (req, res) => {
+  try {
+    res.send(categories);
+    console.log({ message: "Categories retrieved" });
+  } catch (err) {
+    console.error("Error retrieving categories:", err);
+    res.status(500).send({ message: "Internal Server Error" });
+  }
+});
+app.post(
+  "/categories",
+  checkAuthientication("User must be logged in to create categories", [
+    "admin",
+  ]),
+  (req, res) => {
+    try {
+      const { name } = req.body;
+      if (!name) {
+        return res.status(400).send({ message: "Category name is required" });
+      }
+      const newCategoryId =
+        categories.length > 0
+          ? Math.max(...categories.map((cat) => cat.id)) + 1
+          : 1;
+      const newCategory = { id: newCategoryId, name };
+      categories.push(newCategory);
+      res.status(201).send(newCategory);
+      console.log("Category created:", newCategory);
+    } catch (err) {
+      console.error("Error creating category:", err);
+      res.status(500).send({ message: "Internal Server Error" });
+    }
+  }
+);
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
